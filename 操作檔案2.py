@@ -72,6 +72,7 @@ def delete_files_with_content(src, content, progress):
     else:
         messagebox.showinfo("取消", "操作已取消！")
 
+
 def rename_files_with_content(src, old_content, new_content, progress):
     files = filter_files_with_content(src, old_content)
     total_files = len(files)
@@ -130,7 +131,7 @@ def create_gui():
     dst_browse_button.grid(row=1, column=2)
 
     progress = ttk.Progressbar(window, length=200, mode="determinate")
-    progress.grid(row=8, column=0, columnspan=3, pady=10)
+    progress.grid(row=6, column=0, columnspan=3, pady=10)
 
     move_button = tk.Button(
         window,
@@ -139,7 +140,7 @@ def create_gui():
             src_entry.get(), dst_entry.get(), content_entry.get(), progress
         ),
     )
-    move_button.grid(row=4, column=1, pady=10)
+    move_button.grid(row=4, column=0, pady=10)
 
     copy_button = tk.Button(
         window,
@@ -148,7 +149,7 @@ def create_gui():
             src_entry.get(), dst_entry.get(), content_entry.get(), progress
         ),
     )
-    copy_button.grid(row=5, column=1, pady=10)
+    copy_button.grid(row=4, column=1, pady=10)
 
     delete_button = tk.Button(
         window,
@@ -157,26 +158,20 @@ def create_gui():
             src_entry.get(), content_entry.get(), progress
         ),
     )
-    delete_button.grid(row=6, column=1, pady=10)
+    delete_button.grid(row=5, column=0, pady=10)
     rename_button = tk.Button(
         window,
         text="修改名稱",
         command=lambda: rename_files_with_content(
-            src_entry.get(), 
-            content_entry.get(), 
-            simpledialog.askstring("輸入新名稱", "請輸入新的文字："), 
-            progress
+            src_entry.get(),
+            content_entry.get(),
+            simpledialog.askstring("輸入新名稱", "請輸入新的文字："),
+            progress,
         ),
     )
-    rename_button.grid(row=7, column=1, pady=10)
+    rename_button.grid(row=5, column=1, pady=10)
 
     window.mainloop()
 
 
 create_gui()
-
-"""
-在這個新添加的 rename_files_with_content 函數中，我們使用 re.sub() 函數來將檔案名稱中的舊關鍵詞替換為新關鍵詞，然後使用 os.rename() 函數來修改檔案的名稱。我們還在 GUI 中添加了一個新的輸入框來讓用戶輸入新的關鍵詞，以及一個按鈕來觸發這個新的功能。
-請注意，re.sub() 函數會替換檔案名稱中所有匹配到的關鍵詞。如果你只希望替換檔案名稱中的第一個關鍵詞，可以傳入一個額外的參數 count=1 給 re.sub() 函數。
-另外，這段程式碼並未處理檔案名稱已存在的情況。如果新的檔案名稱已經存在於目標資料夾中，則 os.rename() 函數將會引發一個錯誤。如果需要處理這種情況，可以在重命名檔案之前先檢查新的檔案名稱是否已經存在。
-"""
