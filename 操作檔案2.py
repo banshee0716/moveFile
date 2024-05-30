@@ -6,65 +6,47 @@ from tkinter import filedialog, ttk, messagebox, simpledialog
 
 
 def filter_files_with_content(src, content):
+    # 使用正則表達式來過濾檔案
     pattern = re.compile(content)
-    return [f for f in os.listdir(src) if pattern.search(f)]
-
-
-def prepare_dst_directory(dst):
-    if not os.path.exists(dst):
-        os.makedirs(dst)
-
-
-def move_file(src_file_path, dst_file_path):
-    shutil.move(src_file_path, dst_file_path)
-
-
-def copy_file(src_file_path, dst_file_path):
-    shutil.copy(src_file_path, dst_file_path)
-
-
-def copy_directory(src_dir_path, dst_dir_path):
-    shutil.copytree(src_dir_path, dst_dir_path)
-
-
-def delete_file(file_path):
-    os.remove(file_path)
-
-
-def delete_directory(dir_path):
-    shutil.rmtree(dir_path)
-
-
-def process_files(src, dst, content, action, progress):
-    files = filter_files_with_content(src, content)
-    total_files = len(files)
-
-    prepare_dst_directory(dst)
-
-    for i, filename in enumerate(files, 1):
-        src_file_path = os.path.join(src, filename)
-        dst_file_path = os.path.join(dst, filename)
-
-        action(src_file_path, dst_file_path)
-
-        progress["value"] = (i / total_files) * 100
-        window.update_idletasks()
+    files = [f for f in os.listdir(src) if pattern.search(f)]
+    return files
 
 
 def move_files_with_content(src, dst, content, progress):
-    process_files(src, dst, content, move_file, progress)
+    # 檢查目標資料夾是否存在，不存在則創建
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+
+    files = filter_files_with_content(src, content)
+    total_files = len(files)
+
+    for i, filename in enumerate(files, 1):
+        shutil.move(os.path.join(src, filename), os.path.join(dst, filename))
+        progress["value"] = (i / total_files) * 100
+        window.update_idletasks()
+
     messagebox.showinfo("完成", "所有檔案搬移完成！")
 
 
 def copy_files_with_content(src, dst, content, progress):
-    def action(src_path, dst_path):
-        if not os.path.exists(dst_path):
-            if os.path.isfile(src_path):
-                copy_file(src_path, dst_path)
-            elif os.path.isdir(src_path):
-                copy_directory(src_path, dst_path)
+    if not os.path.exists(dst):
+        os.makedirs(dst)
 
-    process_files(src, dst, content, action, progress)
+    files = filter_files_with_content(src, content)
+    total_files = len(files)
+
+    for i, filename in enumerate(files, 1):
+        if os.path.exists(os.path.join(dst, filename)):
+            # 如果檔案或目錄已經存在於目標資料夾，則跳過這個檔案或目錄
+            continue
+        full_path = os.path.join(src, filename)
+        if os.path.isfile(full_path):
+            shutil.copy(full_path, os.path.join(dst, filename))
+        elif os.path.isdir(full_path):
+            shutil.copytree(full_path, os.path.join(dst, filename))
+        progress["value"] = (i / total_files) * 100
+        window.update_idletasks()
+
     messagebox.showinfo("完成", "所有檔案與目錄複製完成！")
 
 
@@ -72,15 +54,17 @@ def delete_files_with_content(src, content, progress):
     files = filter_files_with_content(src, content)
     total_files = len(files)
 
+    # 詢問是否確定刪除
     message = f"你現在要刪除的是「{src}」中關鍵字為「{content}」的文件，這個操作會讓你永久刪除此檔案，確定要刪除嗎？"
     answer = messagebox.askquestion("確認", message, icon="warning")
     if answer == "yes":
         for i, filename in enumerate(files, 1):
             full_path = os.path.join(src, filename)
+            # 判斷是檔案還是資料夾，選擇適當的方法來刪除
             if os.path.isfile(full_path):
-                delete_file(full_path)
+                os.remove(full_path)
             elif os.path.isdir(full_path):
-                delete_directory(full_path)
+                shutil.rmtree(full_path)
             progress["value"] = (i / total_files) * 100
             window.update_idletasks()
 
@@ -104,6 +88,23 @@ def rename_files_with_content(src, old_content, new_content, progress):
     messagebox.showinfo("完成", "所有檔案及資料夾重新命名完成！")
 
 
+def number_files(src, progress):
+    files = [f for f in os.listdir(
+        src) if os.path.isfile(os.path.join(src, f))]
+    total_files = len(files)
+
+    for i, filename in enumerate(files, 1):
+        file_extension = os.path.splitext(filename)[1]
+        new_name = f"{i}{file_extension}"
+        old_path = os.path.join(src, filename)
+        new_path = os.path.join(src, new_name)
+        os.rename(old_path, new_path)
+        progress["value"] = (i / total_files) * 100
+        window.update_idletasks()
+
+    messagebox.showinfo("完成", "所有檔案已編號完成！")
+
+
 def browse_directory():
     folder_selected = filedialog.askdirectory()
     return folder_selected
@@ -112,7 +113,7 @@ def browse_directory():
 def create_gui():
     global window
     window = tk.Tk()
-    window.title("檔案搬移與刪除工具")
+    window.title("檔案管理工具")
 
     tk.Label(window, text="源資料夾:").grid(row=0)
     tk.Label(window, text="目標資料夾:").grid(row=1)
@@ -147,7 +148,7 @@ def create_gui():
     dst_browse_button.grid(row=1, column=2)
 
     progress = ttk.Progressbar(window, length=200, mode="determinate")
-    progress.grid(row=6, column=0, columnspan=3, pady=10)
+    progress.grid(row=7, column=0, columnspan=3, pady=10)
 
     move_button = tk.Button(
         window,
@@ -175,6 +176,7 @@ def create_gui():
         ),
     )
     delete_button.grid(row=5, column=0, pady=10)
+
     rename_button = tk.Button(
         window,
         text="修改名稱",
@@ -186,6 +188,13 @@ def create_gui():
         ),
     )
     rename_button.grid(row=5, column=1, pady=10)
+
+    number_button = tk.Button(
+        window,
+        text="編號檔案",
+        command=lambda: number_files(src_entry.get(), progress),
+    )
+    number_button.grid(row=6, column=0, columnspan=2, pady=10)
 
     window.mainloop()
 
