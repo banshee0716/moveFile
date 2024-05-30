@@ -88,6 +88,23 @@ def rename_files_with_content(src, old_content, new_content, progress):
     messagebox.showinfo("完成", "所有檔案及資料夾重新命名完成！")
 
 
+def number_files(src, progress):
+    files = [f for f in os.listdir(
+        src) if os.path.isfile(os.path.join(src, f))]
+    total_files = len(files)
+
+    for i, filename in enumerate(files, 1):
+        file_extension = os.path.splitext(filename)[1]
+        new_name = f"{i}{file_extension}"
+        old_path = os.path.join(src, filename)
+        new_path = os.path.join(src, new_name)
+        os.rename(old_path, new_path)
+        progress["value"] = (i / total_files) * 100
+        window.update_idletasks()
+
+    messagebox.showinfo("完成", "所有檔案已編號完成！")
+
+
 def browse_directory():
     folder_selected = filedialog.askdirectory()
     return folder_selected
@@ -96,7 +113,7 @@ def browse_directory():
 def create_gui():
     global window
     window = tk.Tk()
-    window.title("檔案搬移與刪除工具")
+    window.title("檔案管理工具")
 
     tk.Label(window, text="源資料夾:").grid(row=0)
     tk.Label(window, text="目標資料夾:").grid(row=1)
@@ -131,7 +148,7 @@ def create_gui():
     dst_browse_button.grid(row=1, column=2)
 
     progress = ttk.Progressbar(window, length=200, mode="determinate")
-    progress.grid(row=6, column=0, columnspan=3, pady=10)
+    progress.grid(row=7, column=0, columnspan=3, pady=10)
 
     move_button = tk.Button(
         window,
@@ -159,6 +176,7 @@ def create_gui():
         ),
     )
     delete_button.grid(row=5, column=0, pady=10)
+
     rename_button = tk.Button(
         window,
         text="修改名稱",
@@ -170,6 +188,13 @@ def create_gui():
         ),
     )
     rename_button.grid(row=5, column=1, pady=10)
+
+    number_button = tk.Button(
+        window,
+        text="編號檔案",
+        command=lambda: number_files(src_entry.get(), progress),
+    )
+    number_button.grid(row=6, column=0, columnspan=2, pady=10)
 
     window.mainloop()
 
